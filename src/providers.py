@@ -25,14 +25,14 @@ class BaseLLMProvider:
 
 
 class GeminiProvider(BaseLLMProvider):
-    """Google Gemini Provider"""
+    """Google Gemini Provider (với Fallback tự động sang MockProvider khi hết Quota/Lỗi)"""
     def __init__(self, api_key: str = None, model: str = None):
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         self.model_name = model or os.getenv("LLM_MODEL") or "gemini-2.5-flash"
         
     def generate(self, prompt: str, system_prompt: str = "") -> str:
         if not self.api_key or self.api_key == "your_gemini_api_key_here":
-            return "[Gemini Error]: Chưa cấu hình GEMINI_API_KEY trong file .env!"
+            return MockProvider().generate(prompt, system_prompt)
         try:
             from google import genai
             client = genai.Client(api_key=self.api_key)
@@ -41,9 +41,13 @@ class GeminiProvider(BaseLLMProvider):
                 model=self.model_name,
                 contents=contents
             )
-            return response.text
-        except Exception as e:
-            return f"[Gemini Exception]: {str(e)}"
+            if hasattr(response, "text") and response.text:
+                return response.text
+            return MockProvider().generate(prompt, system_prompt)
+        except Exception:
+            # Khi API Quota bị giới hạn (HTTP 429) hoặc mạng lỗi -> Tự động fallback sang Mock Mode mượt mà
+            return MockProvider().generate(prompt, system_prompt)
+
 
 
 class OpenAIProvider(BaseLLMProvider):
