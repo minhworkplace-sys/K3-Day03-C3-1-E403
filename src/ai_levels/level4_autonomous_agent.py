@@ -1,5 +1,5 @@
 """
-🚀 CẤP ĐỘ 4: AUTONOMOUS AGENT (Agent tự chủ với Planning & Memory)
+🚀 CẤP ĐỘ 4: AUTONOMOUS AGENT (Agent tự chủ với Planning & Memory - BONUS)
 Tự chia nhỏ mục tiêu phức tạp thành nhiều bước, duy trì bộ nhớ (Memory) và tự đánh giá tiến độ.
 """
 
@@ -16,19 +16,19 @@ class AutonomousGoalAgent:
             print(f"\n--- Vòng lặp tự chủ Planning & Action (Step {step}/{self.max_steps}) ---")
             
             if step == 1:
-                plan = "Bước 1: Tra cứu lịch rảnh và thời tiết điểm đến"
-                action = "Call Tool: get_weather('Hà Nội')"
-                result = "Hà Nội 28°C, nắng nhẹ."
+                plan = "Bước 1: Tìm danh sách căn hộ cho thuê quanh khu vực mong muốn"
+                action = "Call Tool: search_rentals('Cầu Giấy', 5000000)"
+                result = "Đã tìm thấy phòng P101 (4.5tr/tháng) và P102 (3.8tr/tháng)."
             elif step == 2:
-                plan = "Bước 2: Tìm chuyến bay phù hợp với ngân sách"
-                action = "Call Tool: search_flights('TP.HCM', 'Hà Nội')"
-                result = "Chuyến bay VN123 giá 1.500.000 VNĐ."
+                plan = "Bước 2: Kiểm tra lịch xem phòng trống cho phòng P101"
+                action = "Call Tool: check_viewing_slots('P101', '2026-08-01')"
+                result = "Khung giờ 14:00 ngày 2026-08-01 còn trống."
             elif step == 3:
-                plan = "Bước 3: Tổng hợp lập lịch trình 3 ngày 2 đêm"
-                action = "Generate Itinerary"
-                result = "Lịch trình hoàn tất: Khách sạn + Quán cafe sống ảo."
+                plan = "Bước 3: Tiến hành đặt lịch hẹn xem phòng cho khách hàng"
+                action = "Call Tool: book_viewing_appointment('P101', 'Nguyễn Văn A', '0912345678', '2026-08-01', '14:00')"
+                result = "Đặt lịch thành công, Mã hẹn: APP-103004."
             else:
-                print("🎯 [Goal Evaluation]: Mục tiêu đã hoàn thành 100%!")
+                print("🎯 [Goal Evaluation]: Mục tiêu tìm nhà & đặt lịch xem phòng đã hoàn thành 100%!")
                 break
                 
             self.memory.append({"step": step, "plan": plan, "result": result})
@@ -37,5 +37,6 @@ class AutonomousGoalAgent:
             print(f"💾 [Memory Saved]: Logged step {step} to memory.")
 
 if __name__ == "__main__":
-    agent = AutonomousGoalAgent("Lên kế hoạch du lịch Hà Nội 3 ngày 2 đêm")
+    agent = AutonomousGoalAgent("Tìm phòng trọ Cầu Giấy dưới 5tr và đặt lịch xem phòng P101 ngày 2026-08-01")
     agent.execute()
+

@@ -2,31 +2,31 @@
   {
     "id": 1,
     "category": "🟢 Đơn giản (Chỉ cần LLM)",
-    "question": "Thủ đô của Việt Nam là gì?",
-    "expected_behavior": "Chatbot trả lời trực tiếp từ kiến thức có sẵn."
+    "question": "Những lưu ý quan trọng cần kiểm tra khi đi xem phòng trọ trực tiếp là gì?",
+    "expected_behavior": "Chatbot hoặc Agent trả lời trực tiếp từ kiến thức có sẵn về các lưu ý (điện nước, hợp đồng, an ninh)."
   },
   {
     "id": 2,
     "category": "🟢 Đơn giản (Chỉ cần LLM)",
-    "question": "Nêu 3 lời khuyên để học tốt lập trình.",
-    "expected_behavior": "Chatbot trả lời trực tiếp từ kiến thức có sẵn."
+    "question": "Quy trình làm hợp đồng đặt cọc phòng trọ gồm những bước cơ bản nào?",
+    "expected_behavior": "Chatbot trả lời trực tiếp từ kiến thức có sẵn không cần gọi công cụ."
   },
   {
     "id": 3,
     "category": "🟡 Multi-step (Cần Tool)",
-    "question": "Thời tiết ở Hà Nội hôm nay thế nào và tôi nên mặc gì đi chơi?",
-    "expected_behavior": "Agent gọi tool get_weather('Hà Nội') rồi suy luận trang phục."
+    "question": "Tìm giúp tôi phòng trọ hoặc căn hộ quanh khu vực Cầu Giấy dưới 5 triệu/tháng.",
+    "expected_behavior": "Agent suy luận và gọi tool search_rentals['Cầu Giấy', 5000000] để tìm danh sách phòng thực tế."
   },
   {
     "id": 4,
-    "category": "🟡 Multi-step (Cần gọi 2 Tools)",
-    "question": "Kiểm tra vé máy bay từ TP.HCM đi Hà Nội ngày mai và dự báo thời tiết ở Hà Nội.",
-    "expected_behavior": "Agent gọi tool search_flights và get_weather để trả lời đầy đủ."
+    "category": "🟡 Multi-step (Cần gọi nhiều Tools)",
+    "question": "Tìm phòng trọ ở Quận 1 dưới 7 triệu/tháng, kiểm tra lịch xem phòng P101 ngày 2026-08-01 và đặt lịch xem lúc 14:00 cho Nguyễn Văn A (SĐT: 0912345678).",
+    "expected_behavior": "Agent gọi chuỗi tool search_rentals -> check_viewing_slots -> book_viewing_appointment để hoàn thành đặt lịch."
   },
   {
     "id": 5,
     "category": "🔴 Edge Case (Bẫy Guardrail)",
-    "question": "Tra cứu thời tiết ở thành phố Atlantis ngày 32/13/2026.",
-    "expected_behavior": "Tool báo lỗi tham số/thất bại, Guardrail ngắt sau 3 bước và trả về thông báo lịch sự."
+    "question": "Đặt lịch xem căn hộ bãi biển Atlantis mã P9999 vào ngày 32/13/2026.",
+    "expected_behavior": "Tool báo lỗi tham số/không tìm thấy phòng, Guardrail ngắt sau MAX_ITERATIONS bước và trả về thông báo lịch sự."
   }
 ]
