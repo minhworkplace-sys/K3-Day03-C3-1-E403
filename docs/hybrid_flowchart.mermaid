@@ -1,26 +1,27 @@
 flowchart TD
     A[User Input Query] --> B{Phân loại loại câu hỏi}
-    
-    %% Đường 1: Chatbot Baseline Path (Lý thuyết / Không cần dữ liệu thực tế)
-    B -- "Lý thuyết / Tư vấn chung (Quy trình, hợp đồng, mẹo xem nhà)" --> C[Chatbot Baseline Path]
+
+    %% Đường 1: Chatbot Baseline Path
+    B -- "Lý thuyết / Tư vấn chung\nQuy trình, hợp đồng, mẹo xem nhà" --> C[Chatbot Baseline Path]
     C --> D[System Prompt: CHATBOT_BASELINE_PROMPT]
     D --> E[LLM Provider sinh câu trả lời trực tiếp]
-    E --> F[Output cho người dùng: Nhanh, tiết kiệm token, không gọi tool]
-    
-    %% Đường 2: ReAct Agent Path (Cần tra cứu / Đặt lịch / Dữ liệu thực tế)
-    B -- "Tra cứu thời gian thực / Đặt lịch xem phòng / Tính chi phí" --> G[ReAct Agent Path]
+    E --> F[Output: Nhanh, tiết kiệm token, không gọi tool]
+
+    %% Đường 2: ReAct Agent Path
+    B -- "Tra cứu thực tế / Đặt lịch / Tính chi phí" --> G[ReAct Agent Path]
     G --> H[System Prompt: REACT_SYSTEM_PROMPT]
-    H --> I[Vòng lặp ReAct Engine (Max Iterations: 4)]
-    
-    I --> J{Sinh Thought & Action?}
-    J -- "Có Action (Gọi Tool)" --> K{Kiểm tra Tool Registry}
-    K -- "Tool hợp lệ" --> L[Thực thi Tool: search_rentals / check_viewing_slots / book_viewing / calculate_fees]
-    K -- "Tool lỗi / Sai tham số" --> M[Trả về thông báo lỗi dạng Observation chuỗi]
-    
+    H --> I["Vòng lặp ReAct Engine — Max Iterations: 4"]
+
+    I --> J{Sinh Thought và Action?}
+
+    J -- "Có Action - Gọi Tool" --> K{Kiểm tra Tool Registry}
+    K -- "Tool hợp lệ" --> L["Thực thi Tool\nsearch_rentals\ncheck_viewing_slots\nbook_viewing_appointment\ncalculate_rental_deposit_and_fees"]
+    K -- "Tool lỗi / Sai tham số" --> M[Trả về thông báo lỗi dạng Observation]
+
     L --> N[Nhận Observation thực tế]
     M --> N
-    N --> O[Nối Observation vào Prompt -> Lặp lại bước suy luận tiếp theo]
+    N --> O[Nối Observation vào Prompt\nLặp lại bước suy luận tiếp theo]
     O --> I
-    
-    J -- "Final Answer" --> P[Trả về kết quả giao dịch hoàn chỉnh cho người dùng]
-    I -- "Chạm mốc MAX_ITERATIONS (Guardrail)" --> Q[Shield Guardrail Triggered: Ngắt lặp an toàn + Thông báo Hotline hỗ trợ]
+
+    J -- "Final Answer" --> P[Trả kết quả hoàn chỉnh cho người dùng]
+    I -- "Chạm MAX_ITERATIONS - Guardrail" --> Q["Guardrail Triggered\nNgắt lặp an toàn\nThông báo Hotline hỗ trợ"]
