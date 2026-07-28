@@ -1,6 +1,6 @@
 # 📋 BẢNG PHÂN VAI & FILE ĐẢM NHẬN NHÓM (C3-01)
 
-| Vai trò (Role) | File đảm nhận | Nhiệm vụ chính | Người đảm nhận | Mã sinh viên | Lớp | Email |
+| Vai trò (Role) | File đảm nhận | Nhiệm vụ chính | Người đảm nhận | Mã sinh viên | Nhóm | Email |
 | :--- | :--- | :--- | :--- | :---: | :---: | :--- |
 | **Role 1: Product Architect** | `config/test_cases.json` | Định hướng bài toán & soạn bộ câu test case | **Nguyễn Gia Thiều** (Thành viên) | `2A202601759` | C3-01 | `nguyenthieu11021995@gmail.com` |
 | **Role 2: Tool Engineer** | `src/tools.py` | Định nghĩa các công cụ (Tools) cho Agent | **Phạm Trung Kiên** (Thành viên) | `2A202601525` | C3-01 | `kienpt04@gmail.com` |

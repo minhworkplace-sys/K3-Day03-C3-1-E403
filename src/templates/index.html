@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏠 Trợ Lý Tìm & Đặt Lịch Xem Nhà Trọ</title>
+  <meta name="description" content="Trợ lý AI thông minh hỗ trợ tìm kiếm và đặt lịch xem nhà trọ, căn hộ cho thuê tại Việt Nam." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════════
+       RESET & TOKENS
+    ═══════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:        #0d0f14;
+      --bg-surface:     #141720;
+      --bg-card:        #1a1e2e;
+      --bg-input:       #1e2235;
+      --border:         #2a2f45;
+      --border-light:   #353b55;
+
+      --accent:         #6c63ff;
+      --accent-hover:   #5a52e0;
+      --accent-glow:    rgba(108,99,255,.25);
+
+      --thought-bg:     rgba(168,85,247,.12);
+      --thought-border: #a855f7;
+      --thought-text:   #d8b4fe;
+
+      --action-bg:      rgba(59,130,246,.12);
+      --action-border:  #3b82f6;
+      --action-text:    #93c5fd;
+
+      --obs-bg:         rgba(34,197,94,.10);
+      --obs-border:     #22c55e;
+      --obs-text:       #86efac;
+
+      --final-bg:       rgba(234,179,8,.10);
+      --final-border:   #eab308;
+      --final-text:     #fde047;
+
+      --guardrail-bg:   rgba(239,68,68,.10);
+      --guardrail-border:#ef4444;
+      --guardrail-text: #fca5a5;
+
+      --oos-bg:         rgba(249,115,22,.10);
+      --oos-border:     #f97316;
+      --oos-text:       #fdba74;
+
+      --text-primary:   #e8eaf6;
+      --text-secondary: #8892b0;
+      --text-muted:     #4a5278;
+
+      --user-bubble-bg: linear-gradient(135deg, #6c63ff, #a855f7);
+      --bot-bubble-bg:  #1a1e2e;
+
+      --radius-sm:  6px;
+      --radius-md:  12px;
+      --radius-lg:  18px;
+      --radius-xl:  24px;
+
+      --shadow-glow: 0 0 24px rgba(108,99,255,.3);
+      --font: 'Inter', system-ui, sans-serif;
+    }
+
+    html, body { height: 100%; font-family: var(--font); background: var(--bg-base); color: var(--text-primary); }
+
+    /* ═══════════════════════════════════════════════
+       LAYOUT
+    ═══════════════════════════════════════════════ */
+    .app {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 20px;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .logo-icon {
+      width: 44px; height: 44px;
+      background: var(--user-bubble-bg);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: var(--shadow-glow);
+    }
+    .logo-text h1 { font-size: 13px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+    .logo-text p  { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+    .sidebar-section-title {
+      font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+      color: var(--text-muted); text-transform: uppercase;
+    }
+
+    /* Status badge */
+    .status-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+    .status-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .status-row:last-child { margin-bottom: 0; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      flex-shrink: 0;
+    }
+    .status-label { font-size: 11px; color: var(--text-secondary); }
+    .status-value { font-size: 12px; color: var(--text-primary); font-weight: 500; margin-left: auto; }
+
+    /* Capabilities */
+    .cap-list { display: flex; flex-direction: column; gap: 8px; }
+    .cap-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 12px;
+      transition: border-color .2s;
+      cursor: default;
+    }
+    .cap-item:hover { border-color: var(--accent); }
+    .cap-emoji { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .cap-text  { color: var(--text-secondary); line-height: 1.4; }
+
+    /* Legend */
+    .legend { display: flex; flex-direction: column; gap: 7px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .legend-dot.thought    { background: var(--thought-border); }
+    .legend-dot.action     { background: var(--action-border); }
+    .legend-dot.observation{ background: var(--obs-border); }
+    .legend-dot.final      { background: var(--final-border); }
+
+    /* ─── MAIN CHAT ─── */
+    .chat-main {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .chat-header {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 24px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .header-avatar {
+      width: 40px; height: 40px;
+      background: var(--user-bubble-bg);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      box-shadow: var(--shadow-glow);
+    }
+    .header-info h2 { font-size: 15px; font-weight: 600; }
+    .header-info p  { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+    .header-online  { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #22c55e; }
+    .header-online::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%;
+      background: #22c55e; box-shadow: 0 0 6px #22c55e;
+    }
+    .header-actions { margin-left: auto; display: flex; gap: 8px; }
+    .header-btn {
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-secondary); border-radius: var(--radius-sm);
+      padding: 6px 12px; font-size: 11px; cursor: pointer;
+      transition: all .2s; font-family: var(--font);
+    }
+    .header-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Messages area */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      scroll-behavior: smooth;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 4px; }
+
+    /* Welcome banner */
+    .welcome-banner {
+      text-align: center;
+      padding: 40px 20px;
+      animation: fadeInUp .5s ease;
+    }
+    .welcome-banner .wb-icon { font-size: 64px; margin-bottom: 16px; display: block; }
+    .welcome-banner h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .welcome-banner p  { color: var(--text-secondary); font-size: 14px; max-width: 420px; margin: 0 auto 24px; line-height: 1.6; }
+    .quick-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .chip {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 20px; padding: 8px 14px;
+      font-size: 12px; color: var(--text-secondary);
+      cursor: pointer; transition: all .2s;
+      font-family: var(--font);
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); transform: translateY(-1px); }
+
+    /* Message bubbles */
+    .msg-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      animation: fadeInUp .3s ease;
+    }
+    .msg-row.user { flex-direction: row-reverse; }
+
+    .msg-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      flex-shrink: 0; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .msg-avatar.bot { background: var(--user-bubble-bg); box-shadow: 0 0 12px var(--accent-glow); }
+    .msg-avatar.user { background: var(--bg-card); border: 1px solid var(--border); }
+
+    .msg-content { max-width: 72%; display: flex; flex-direction: column; gap: 4px; }
+    .msg-row.user .msg-content { align-items: flex-end; }
+
+    .msg-bubble {
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+    .msg-bubble.user {
+      background: var(--user-bubble-bg);
+      border-bottom-right-radius: var(--radius-sm);
+      color: #fff;
+    }
+    .msg-bubble.bot {
+      background: var(--bot-bubble-bg);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: var(--radius-sm);
+      color: var(--text-primary);
+    }
+    .msg-time { font-size: 10px; color: var(--text-muted); padding: 0 4px; }
+
+    /* ReAct trace block */
+    .react-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      font-size: 13px;
+      max-width: 72%;
+    }
+    .react-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,.03);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 600; letter-spacing: .5px;
+      color: var(--text-secondary); text-transform: uppercase;
+    }
+    .react-body { padding: 0; }
+
+    /* Individual step rows */
+    .step-row {
+      border-left: 3px solid transparent;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      animation: slideIn .25s ease;
+    }
+    .step-row:last-child { border-bottom: none; }
+
+    .step-row.thought    { border-color: var(--thought-border); background: var(--thought-bg); }
+    .step-row.action     { border-color: var(--action-border);  background: var(--action-bg);  }
+    .step-row.observation{ border-color: var(--obs-border);     background: var(--obs-bg);     }
+    .step-row.final      { border-color: var(--final-border);   background: var(--final-bg);   }
+    .step-row.guardrail  { border-color: var(--guardrail-border); background: var(--guardrail-bg); }
+    .step-row.oos        { border-color: var(--oos-border);     background: var(--oos-bg);     }
+
+    .step-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: .8px;
+      text-transform: uppercase; margin-bottom: 5px;
+    }
+    .thought    .step-label { color: var(--thought-border); }
+    .action     .step-label { color: var(--action-border);  }
+    .observation .step-label{ color: var(--obs-border);     }
+    .final      .step-label { color: var(--final-border);   }
+    .guardrail  .step-label { color: var(--guardrail-border); }
+    .oos        .step-label { color: var(--oos-border);     }
+
+    .step-text { color: var(--text-primary); line-height: 1.55; white-space: pre-wrap; }
+    .thought    .step-text { color: var(--thought-text); }
+    .action     .step-text { color: var(--action-text);  font-family: 'Courier New', monospace; }
+    .observation .step-text{ color: var(--obs-text);     }
+    .final      .step-text { color: var(--final-text);   font-weight: 500; }
+    .guardrail  .step-text { color: var(--guardrail-text); }
+    .oos        .step-text { color: var(--oos-text);     }
+
+    /* Code chip for tool name */
+    .tool-chip {
+      display: inline-block;
+      background: rgba(59,130,246,.2);
+      border: 1px solid var(--action-border);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--action-text);
+      margin-bottom: 4px;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+      display: flex; align-items: center; gap: 12px;
+      animation: fadeInUp .3s ease;
+    }
+    .typing-dots {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+      padding: 12px 16px;
+      display: flex; gap: 5px; align-items: center;
+    }
+    .typing-dots span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent); opacity: .3;
+      animation: bounce 1.2s ease infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: .2s; }
+    .typing-dots span:nth-child(3) { animation-delay: .4s; }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 2px; background: var(--border);
+      border-radius: 1px; overflow: hidden; margin: 8px 14px 2px;
+    }
+    .progress-fill {
+      height: 100%; background: linear-gradient(90deg, var(--accent), #a855f7);
+      border-radius: 1px; transition: width .4s ease;
+    }
+
+    /* ─── INPUT AREA ─── */
+    .chat-input-area {
+      padding: 16px 24px;
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .input-wrapper {
+      display: flex; align-items: flex-end; gap: 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 10px 10px 10px 18px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .input-wrapper:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    #user-input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text-primary); font-size: 14px; font-family: var(--font);
+      resize: none; max-height: 120px; min-height: 24px; line-height: 1.5;
+    }
+    #user-input::placeholder { color: var(--text-muted); }
+
+    #send-btn {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--user-bubble-bg);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+      transition: transform .2s, box-shadow .2s, opacity .2s;
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+    #send-btn:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 4px 20px var(--accent-glow); }
+    #send-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .input-hint {
+      text-align: center; font-size: 11px; color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       MARKDOWN RENDERING (inline)
+    ═══════════════════════════════════════════════ */
+    .rendered strong { font-weight: 700; }
+    .rendered em     { font-style: italic; }
+    .rendered ul, .rendered ol { padding-left: 18px; margin: 6px 0; }
+    .rendered li     { margin: 3px 0; }
+    .rendered code   {
+      background: rgba(255,255,255,.08);
+      border-radius: 4px; padding: 1px 5px;
+      font-family: 'Courier New', monospace; font-size: 12px;
+    }
+    .rendered p { margin-bottom: 6px; }
+    .rendered p:last-child { margin-bottom: 0; }
+
+    /* ═══════════════════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════════════════ */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0);    }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-8px); }
+      to   { opacity: 1; transform: translateX(0);    }
+    }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: .3; }
+      40%            { transform: translateY(-6px); opacity: 1; }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ═══════════════════════════════════════════════
+       RESPONSIVE
+    ═══════════════════════════════════════════════ */
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .chat-messages { padding: 16px; }
+      .msg-content, .react-block { max-width: 90%; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ════════ SIDEBAR ════════ -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🏠</div>
+      <div class="logo-text">
+        <h1>Trợ Lý Nhà Trọ</h1>
+        <p>ReAct Agent · Streaming</p>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title" style="margin-bottom:10px;">Trạng thái hệ thống</div>
+      <div class="status-card">
+        <div class="status-row">
+          <span class="status-dot"></span>
+          <span class="status-label">Agent</span>
+          <span class="status-value">Online</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot" style="background:#3b82f6;box-shadow:0 0 8px #3b82f6;"></span>
+          <span class="status-label">Streaming</span>
+          <span class="status-value">SSE / Realtime</span>
+        </div>
+        <div class="status-row">
+          <span class="status-dot" style="background:#a855f7;box-shadow:0 0 8px #a855f7;"></span>
+          <span class="status-label">Mode</span>
+          <span class="status-value">ReAct Loop</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title" style="margin-bottom:10px;">Khả năng hỗ trợ</div>
+      <div class="cap-list">
+        <div class="cap-item">
+          <span class="cap-emoji">🔍</span>
+          <span class="cap-text">Tìm phòng trọ / căn hộ theo khu vực &amp; ngân sách</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-emoji">📅</span>
+          <span class="cap-text">Kiểm tra lịch xem phòng còn trống</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-emoji">✅</span>
+          <span class="cap-text">Đặt lịch hẹn xem phòng cho khách hàng</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-emoji">💰</span>
+          <span class="cap-text">Tính toán chi phí ban đầu khi thuê nhà</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sidebar-section-title" style="margin-bottom:10px;">Chú thích màu sắc</div>
+      <div class="legend">
+        <div class="legend-row"><span class="legend-dot thought"></span><span>Thought — Suy luận</span></div>
+        <div class="legend-row"><span class="legend-dot action"></span><span>Action — Gọi công cụ</span></div>
+        <div class="legend-row"><span class="legend-dot observation"></span><span>Observation — Kết quả</span></div>
+        <div class="legend-row"><span class="legend-dot final"></span><span>Final Answer — Câu trả lời</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">
+        📌 Phạm vi: <strong style="color:var(--text-secondary)">Tìm &amp; Đặt Lịch Xem Nhà Trọ / Căn Hộ Cho Thuê</strong><br/>
+        Câu hỏi ngoài lề sẽ được thông báo không trong phạm vi hỗ trợ.
+      </div>
+    </div>
+  </aside>
+
+  <!-- ════════ MAIN CHAT ════════ -->
+  <main class="chat-main">
+
+    <!-- Header -->
+    <header class="chat-header">
+      <div class="header-avatar">🏠</div>
+      <div class="header-info">
+        <h2>Trợ Lý Tìm &amp; Đặt Lịch Xem Nhà Trọ</h2>
+        <div class="header-online">Đang hoạt động · Phản hồi ngay lập tức</div>
+      </div>
+      <div class="header-actions">
+        <button class="header-btn" onclick="clearChat()" title="Xóa hội thoại">🗑 Xóa</button>
+      </div>
+    </header>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chat-messages">
+
+      <!-- Welcome banner -->
+      <div class="welcome-banner" id="welcome-banner">
+        <span class="wb-icon">🏡</span>
+        <h2>Chào mừng bạn đến với Trợ Lý Nhà Trọ!</h2>
+        <p>Tôi có thể giúp bạn tìm phòng trọ, kiểm tra lịch xem phòng và đặt lịch hẹn nhanh chóng. Hãy thử hỏi tôi ngay!</p>
+        <div class="quick-chips">
+          <button class="chip" onclick="sendChip('Tìm phòng trọ ở Cầu Giấy dưới 5 triệu')">🏠 Tìm phòng Cầu Giấy &lt;5tr</button>
+          <button class="chip" onclick="sendChip('Tìm căn hộ ở Quận 1 dưới 7 triệu rồi đặt lịch xem phòng cho Nguyễn Văn A số 0912345678 ngày 2026-08-01')">🏙️ Tìm &amp; đặt lịch Quận 1</button>
+          <button class="chip" onclick="sendChip('Kiểm tra lịch xem phòng P101 ngày 2026-08-01')">📅 Kiểm tra lịch P101</button>
+          <button class="chip" onclick="sendChip('Tính tiền cọc cho phòng giá 4500000 đặt cọc 1 tháng phí dịch vụ 200000')">💰 Tính chi phí ban đầu</button>
+          <button class="chip" onclick="sendChip('Những điều cần lưu ý khi đi xem phòng trọ')">💡 Mẹo khi xem phòng</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Input area -->
+    <div class="chat-input-area">
+      <div class="input-wrapper">
+        <textarea
+          id="user-input"
+          placeholder="Nhập câu hỏi về nhà trọ / căn hộ cho thuê..."
+          rows="1"
+          autocomplete="off"
+          spellcheck="false"
+        ></textarea>
+        <button id="send-btn" onclick="sendMessage()" title="Gửi (Enter)">➤</button>
+      </div>
+      <div class="input-hint">Nhấn <kbd style="background:var(--bg-card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">Enter</kbd> để gửi · <kbd style="background:var(--bg-card);padding:1px 5px;border-radius:3px;border:1px solid var(--border);font-size:10px;">Shift+Enter</kbd> xuống dòng</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════ */
+
+const messagesEl = document.getElementById('chat-messages');
+const inputEl    = document.getElementById('user-input');
+const sendBtn    = document.getElementById('send-btn');
+
+let isStreaming = false;
+
+function getNow() {
+  return new Date().toLocaleTimeString('vi-VN', { hour:'2-digit', minute:'2-digit' });
+}
+
+/** Simple markdown → HTML renderer */
+function renderMarkdown(text) {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/\n•\s/g, '\n• ')
+    .replace(/\n/g, '<br/>')
+    .replace(/^(#{1,3})\s+(.+)$/gm, (_, h, t) => `<strong>${t}</strong>`)
+    .replace(/^[-*]\s+(.+)$/gm, (_, t) => `<li>${t}</li>`)
+    .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
+    .replace(/^(\d+)\.\s+(.+)$/gm, (_, n, t) => `<li>${t}</li>`);
+}
+
+function scrollBottom() {
+  messagesEl.scrollTo({ top: messagesEl.scrollHeight, behavior: 'smooth' });
+}
+
+function hideWelcome() {
+  const wb = document.getElementById('welcome-banner');
+  if (wb) wb.style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════════
+   USER MESSAGE BUBBLE
+═══════════════════════════════════════════════ */
+function addUserMessage(text) {
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.innerHTML = `
+    <div class="msg-avatar user">👤</div>
+    <div class="msg-content">
+      <div class="msg-bubble user rendered">${renderMarkdown(escapeHtml(text))}</div>
+      <div class="msg-time">${getNow()}</div>
+    </div>`;
+  messagesEl.appendChild(row);
+  scrollBottom();
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ═══════════════════════════════════════════════
+   TYPING INDICATOR
+═══════════════════════════════════════════════ */
+let typingEl = null;
+function showTyping() {
+  typingEl = document.createElement('div');
+  typingEl.className = 'typing-indicator';
+  typingEl.id = 'typing-indicator';
+  typingEl.innerHTML = `
+    <div class="msg-avatar bot">🏠</div>
+    <div class="typing-dots"><span></span><span></span><span></span></div>`;
+  messagesEl.appendChild(typingEl);
+  scrollBottom();
+}
+function hideTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+/* ═══════════════════════════════════════════════
+   REACT BLOCK BUILDER
+═══════════════════════════════════════════════ */
+let currentReactBlock = null;
+let currentReactBody  = null;
+let currentProgressFill = null;
+
+function createReactBlock() {
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.innerHTML = `<div class="msg-avatar bot">🏠</div><div class="msg-content" style="max-width:72%"></div>`;
+
+  const content = row.querySelector('.msg-content');
+
+  const block = document.createElement('div');
+  block.className = 'react-block';
+  block.innerHTML = `
+    <div class="react-header">
+      <span>⚙️</span>
+      <span>ReAct Agent đang xử lý</span>
+      <span id="step-counter" style="margin-left:auto;font-size:10px;color:var(--accent)">Bước 1/?</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+    <div class="react-body"></div>`;
+
+  content.appendChild(block);
+  messagesEl.appendChild(row);
+
+  currentReactBlock  = block;
+  currentReactBody   = block.querySelector('.react-body');
+  currentProgressFill = block.querySelector('.progress-fill');
+
+  scrollBottom();
+  return { row, block, content };
+}
+
+function addStepRow(type, labelHtml, bodyHtml) {
+  if (!currentReactBody) return;
+  const div = document.createElement('div');
+  div.className = `step-row ${type}`;
+  div.innerHTML = `<div class="step-label">${labelHtml}</div><div class="step-text rendered">${bodyHtml}</div>`;
+  currentReactBody.appendChild(div);
+  scrollBottom();
+}
+
+function finalizeReactBlock() {
+  if (!currentReactBlock) return;
+  const header = currentReactBlock.querySelector('.react-header span:nth-child(2)');
+  if (header) header.textContent = 'ReAct Agent · Hoàn thành';
+  if (currentProgressFill) currentProgressFill.style.width = '100%';
+  currentReactBlock = null;
+  currentReactBody  = null;
+  currentProgressFill = null;
+}
+
+/* ═══════════════════════════════════════════════
+   SIMPLE ASSISTANT BUBBLE (for final/oos/greeting)
+═══════════════════════════════════════════════ */
+function addBotBubble(html) {
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+  row.innerHTML = `
+    <div class="msg-avatar bot">🏠</div>
+    <div class="msg-content">
+      <div class="msg-bubble bot rendered">${html}</div>
+      <div class="msg-time">${getNow()}</div>
+    </div>`;
+  messagesEl.appendChild(row);
+  scrollBottom();
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN SEND LOGIC
+═══════════════════════════════════════════════ */
+async function sendMessage() {
+  const text = inputEl.value.trim();
+  if (!text || isStreaming) return;
+
+  hideWelcome();
+  isStreaming = true;
+  sendBtn.disabled = true;
+  inputEl.value = '';
+  autoResize();
+
+  addUserMessage(text);
+  showTyping();
+
+  let reactCreated = false;
+
+  try {
+    const resp = await fetch('/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      // Parse SSE lines
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop(); // keep incomplete
+
+      for (const chunk of lines) {
+        const line = chunk.trim();
+        if (!line.startsWith('data:')) continue;
+        const raw = line.slice(5).trim();
+        let event;
+        try { event = JSON.parse(raw); } catch { continue; }
+
+        handleEvent(event, { reactCreated, setReactCreated: v => reactCreated = v });
+      }
+    }
+
+  } catch (err) {
+    hideTyping();
+    addBotBubble(`<span style="color:var(--guardrail-text)">⚠️ Lỗi kết nối: ${escapeHtml(err.message)}</span>`);
+  }
+
+  hideTyping();
+  finalizeReactBlock();
+  isStreaming = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+function handleEvent(event, ctx) {
+  switch (event.type) {
+
+    case 'step_start':
+      if (!ctx.reactCreated) {
+        hideTyping();
+        createReactBlock();
+        ctx.setReactCreated(true);
+      }
+      // Update progress
+      const pct = Math.round((event.step / event.max) * 100);
+      if (currentProgressFill) currentProgressFill.style.width = pct + '%';
+      const counter = currentReactBlock && currentReactBlock.querySelector('#step-counter');
+      if (counter) counter.textContent = `Bước ${event.step}/${event.max}`;
+      break;
+
+    case 'thought':
+      addStepRow('thought',
+        '💭 Thought',
+        renderMarkdown(escapeHtml(event.content))
+      );
+      break;
+
+    case 'action':
+      addStepRow('action',
+        '🛠️ Action',
+        `<span class="tool-chip">${escapeHtml(event.tool)}</span><br/>` +
+        (event.args && event.args.length
+          ? `Tham số: <code>${event.args.map(escapeHtml).join(', ')}</code>`
+          : '')
+      );
+      break;
+
+    case 'observation':
+      addStepRow('observation',
+        '👁️ Observation',
+        renderMarkdown(escapeHtml(event.content))
+      );
+      break;
+
+    case 'final_answer':
+      if (ctx.reactCreated) {
+        addStepRow('final',
+          '🏁 Final Answer',
+          renderMarkdown(escapeHtml(event.content))
+        );
+      } else {
+        hideTyping();
+        addBotBubble(renderMarkdown(escapeHtml(event.content)));
+      }
+      break;
+
+    case 'out_of_scope':
+      hideTyping();
+      const oosRow = document.createElement('div');
+      oosRow.className = 'msg-row';
+      oosRow.innerHTML = `<div class="msg-avatar bot">🏠</div><div class="msg-content" style="max-width:72%"></div>`;
+      const oosContent = oosRow.querySelector('.msg-content');
+      const oosBlock = document.createElement('div');
+      oosBlock.className = 'react-block';
+      oosBlock.innerHTML = `
+        <div class="react-header"><span>⚠️</span><span>Ngoài phạm vi hỗ trợ</span></div>
+        <div class="step-row oos">
+          <div class="step-label">⚠️ Thông báo</div>
+          <div class="step-text rendered">${renderMarkdown(escapeHtml(event.content))}</div>
+        </div>`;
+      oosContent.appendChild(oosBlock);
+      messagesEl.appendChild(oosRow);
+      scrollBottom();
+      break;
+
+    case 'guardrail':
+      if (ctx.reactCreated) {
+        addStepRow('guardrail', '🛡️ Guardrail', renderMarkdown(escapeHtml(event.content)));
+      } else {
+        hideTyping();
+        addBotBubble(`<span style="color:var(--guardrail-text)">${renderMarkdown(escapeHtml(event.content))}</span>`);
+      }
+      break;
+
+    case 'error':
+      hideTyping();
+      addBotBubble(`<span style="color:var(--guardrail-text)">❌ ${escapeHtml(event.content)}</span>`);
+      break;
+
+    case 'done':
+      hideTyping();
+      break;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   QUICK CHIPS
+═══════════════════════════════════════════════ */
+function sendChip(text) {
+  inputEl.value = text;
+  sendMessage();
+}
+
+/* ═══════════════════════════════════════════════
+   CLEAR CHAT
+═══════════════════════════════════════════════ */
+function clearChat() {
+  if (isStreaming) return;
+  messagesEl.innerHTML = `
+    <div class="welcome-banner" id="welcome-banner">
+      <span class="wb-icon">🏡</span>
+      <h2>Chào mừng bạn đến với Trợ Lý Nhà Trọ!</h2>
+      <p>Tôi có thể giúp bạn tìm phòng trọ, kiểm tra lịch xem phòng và đặt lịch hẹn nhanh chóng. Hãy thử hỏi tôi ngay!</p>
+      <div class="quick-chips">
+        <button class="chip" onclick="sendChip('Tìm phòng trọ ở Cầu Giấy dưới 5 triệu')">🏠 Tìm phòng Cầu Giấy &lt;5tr</button>
+        <button class="chip" onclick="sendChip('Tìm căn hộ ở Quận 1 dưới 7 triệu rồi đặt lịch xem phòng cho Nguyễn Văn A số 0912345678 ngày 2026-08-01')">🏙️ Tìm &amp; đặt lịch Quận 1</button>
+        <button class="chip" onclick="sendChip('Kiểm tra lịch xem phòng P101 ngày 2026-08-01')">📅 Kiểm tra lịch P101</button>
+        <button class="chip" onclick="sendChip('Tính tiền cọc cho phòng giá 4500000 đặt cọc 1 tháng phí dịch vụ 200000')">💰 Tính chi phí ban đầu</button>
+        <button class="chip" onclick="sendChip('Những điều cần lưu ý khi đi xem phòng trọ')">💡 Mẹo khi xem phòng</button>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   TEXTAREA AUTO RESIZE
+═══════════════════════════════════════════════ */
+function autoResize() {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+}
+
+inputEl.addEventListener('input', autoResize);
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+// Focus on load
+window.addEventListener('load', () => inputEl.focus());
+</script>
+</body>
+</html>
